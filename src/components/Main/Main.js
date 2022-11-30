@@ -1,10 +1,8 @@
-import React , {Component , useEffect} from 'react';
-import PropTypes from 'prop-types';
+import React , {Component } from 'react';
 import './Main.css';
 import LeafletMap from '../Leaflet-Map/Leaflet-Map';
 import Spinner from '../Spinner/Spinner';
 import CustomTooltip from '../CustomTooltip/CustomTooltip';
-
 import {callWeatherAPIforCurrentWeather , 
         getCurrentLocation , 
         callWeatherAPIforWeatherForecast} from '../../services/services'
@@ -12,17 +10,16 @@ import {callWeatherAPIforCurrentWeather ,
 import {
   AreaChart,
   Area,
-  XAxis,
-  YAxis,
   CartesianGrid,
   Tooltip,
-  ResponsiveContainer
+  ResponsiveContainer,
+  Legend
 } from "recharts";
 
-import { Card , Space , Layout , Col, Row , Typography, Statistic, Divider, Spin, Empty} from 'antd';
+import { Card , Space , Layout , Col, Row , Statistic} from 'antd';
 
-const { Title } = Typography;
-const { Header, Footer, Sider, Content } = Layout;
+
+const { Header, Footer, Content } = Layout;
 
 
 class Main extends Component{
@@ -82,13 +79,13 @@ class Main extends Component{
     let list = [];
 
      resp.data.list.forEach((res)=>{
-      if(list.length===0 || list[list.length - 1].date != res.dt_txt.split(" ")[0]  ){
+      if(list.length===0 || list[list.length - 1].date !== res.dt_txt.split(" ")[0]  ){
           let newObj = {
             date : res.dt_txt.split(" ")[0],
             temp_max : res.main.temp_max,
             temp_min : res.main.temp_min,
-            disp_temp_min : res.main.temp_min,
-            disp_temp_max : res.main.temp_max,
+            Min : res.main.temp_min,
+            Max : res.main.temp_max,
 
           }
           list.push(newObj);
@@ -97,11 +94,11 @@ class Main extends Component{
         let oldObj = list.pop();
         if(oldObj.temp_max < res.main.temp_max){
           oldObj.temp_max = res.main.temp_max;
-          oldObj.disp_temp_max = res.main.temp_max;
+          oldObj.Max = res.main.temp_max;
         }
         if(oldObj.temp_min > res.main.temp_min){
           oldObj.temp_min = res.main.temp_min
-          oldObj.disp_temp_min = res.main.temp_min
+          oldObj.Min = res.main.temp_min
         }
 
         list.push(oldObj);
@@ -117,8 +114,8 @@ class Main extends Component{
     })
 
     list.forEach(data=>{
-      data.disp_temp_min  = (data.disp_temp_min  - min ) / (max - min)
-      data.disp_temp_max  = (data.disp_temp_max  - min ) / (max - min)
+      data.Min  = (data.Min  - min ) / (max - min)
+      data.Max  = (data.Max  - min ) / (max - min)
     })
 
     this.setState((state) => ({
@@ -132,10 +129,6 @@ class Main extends Component{
   } 
 
   handleClickEventData = (latitude,longitude) => {
-    // console.log("inside handleClickedEventData")
-    // console.log(latitude)
-    // console.log(longitude)
-
     callWeatherAPIforCurrentWeather(latitude,longitude)
       .then(res1 =>{
         this.setState((state) => ({
@@ -179,7 +172,17 @@ class Main extends Component{
         </Header>
         <Content style={{padding:'2%'}}>
           <Space direction="vertical" size="middle" style={{ display: 'flex' }}>
-            <Card style={{ minWidth: '300px' }}>
+            <Card hoverable size="small" title="Current Selected Location" style={{ minWidth: '300px'  }}>
+                <Row style={{alignContent:'center' , justifyContent: 'space-between' , alignItems:'center'}}>
+                  <Col span ={12}  style={{minWidth:'75px' ,textAlign:'center'}}> 
+                    Latitude : {this.state.lat}
+                  </Col>
+                  <Col span ={12} style={{minWidth:'75px' ,textAlign:'center'}}> 
+                    longitude : {this.state.long} 
+                  </Col>
+                </Row>
+              </Card>
+            <Card hoverable style={{ minWidth: '300px' }}>
               <Row style={{alignContent:'center' , justifyContent: 'space-between' , alignItems:'center'}}>
                 <Col span={6} style={{minWidth:'100px'}} > 
                 <Statistic title="Current Weather" value={this.state.currentWeatherApiRes.data.weather[0].description} prefix={
@@ -212,24 +215,25 @@ class Main extends Component{
                             
             </Card>
   
-            <Card title="Weather forecast for 5 days" style={{ minWidth: '300px' }}>
+            <Card hoverable size="small" title="Weather forecast for 5 days" style={{ minWidth: '300px' }}>
               <Row>
                 <Col span ={24}> 
                   <ResponsiveContainer height={'100%'} width={'100%'} minHeight={200} minWidth={200}>
                     <AreaChart   data={this.state.chartsData} minWidth={200} width={700} height={150} stackOffset='wiggle'  >
                         <CartesianGrid strokeDasharray="3 3" />
-                        <XAxis dataKey="date" />
+                        {/* <XAxis dataKey="date" /> */}
                         {/* <YAxis /> */}
                         <Tooltip content={<CustomTooltip />}/>
-                        <Area type="number" dataKey="disp_temp_max" stroke="#8884d8" fill="#8884d8" />
-                        <Area type="number" dataKey="disp_temp_min" stroke="#82ca9d" fill="#82ca9d" />
+                        <Legend verticalAlign="top" height={36} />
+                        <Area type="number" dataKey="Max" stroke="#8884d8" fill="#8884d8" />
+                        <Area type="number" dataKey="Min" stroke="#82ca9d" fill="#82ca9d" />
                     </AreaChart>
                   </ResponsiveContainer>
                 </Col>
               </Row>
             </Card>
-            <Card title="Find Weather for another location" style={{ minWidth: '300px' }}>
-            <LeafletMap handleClickEventData={this.handleClickEventData} lat={this.state.lat} long={this.state.long}/>
+            <Card hoverable size="small" title="Find Weather for another location" style={{ minWidth: '300px' }}>
+              <LeafletMap handleClickEventData={this.handleClickEventData} lat={this.state.lat} long={this.state.long}/>
             </Card>
   
           </Space>
@@ -238,7 +242,6 @@ class Main extends Component{
         <Footer 
         style={{ 
               borderTop: '1px solid #e8e8e8',
-              position: 'fixed',
               left: 0,
               bottom: 0,
               width: '100%',
