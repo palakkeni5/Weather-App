@@ -37,8 +37,6 @@ class Main extends Component{
 
   componentDidMount(){
     
-    
-
     getCurrentLocation()
     .then((resp)=>{
       // console.log("Inside Main.js " + res )
@@ -156,7 +154,10 @@ class Main extends Component{
         
       })
 
-      window.scrollTo(0, 0);
+      setTimeout(()=>{
+        window.scrollTo(0, 0);
+      }, 500)
+      
   }
 
 
