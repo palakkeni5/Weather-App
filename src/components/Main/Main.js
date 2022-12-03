@@ -31,30 +31,30 @@ class Main extends Component{
                     lat : null , 
                     long : null , 
                     forecastWeatherApiRes : null,
-                    chartsData : null };
-    this.spinner = true;
-  }
-
-  componentDidMount(){
+                    chartsData : null
+                  };
     
-    getCurrentLocation()
-    .then((resp)=>{
-      // console.log("Inside Main.js " + res )
+  }
+  async componentDidMount(){
+
+    await getCurrentLocation()
+    .then(async (resp)=>{
       callWeatherAPIforCurrentWeather(resp.lat, resp.long)
-      .then(res1 =>{
+      .then(async res1 =>{
         this.setState((state) => ({
                 currentWeatherApiRes: res1,
                 lat: resp.lat,
                 long: resp.long,
                 forecastWeatherApiRes : state.forecastWeatherApiRes,
                 chartsData : state.chartsData
-              }));
-         
-      })
+              }));         
+        })     
 
+      return resp;
+    }) 
+    .then( async (resp) =>{
       callWeatherAPIforWeatherForecast(resp.lat, resp.long)
       .then(res2 =>{
-        console.log(res2)
         this.setState((state) => ({
                 currentWeatherApiRes: state.currentWeatherApiRes,
                 lat: resp.lat,
@@ -63,12 +63,29 @@ class Main extends Component{
                 chartsData : state.chartsData
               }));
 
-        this.processForecastData(res2);
-        
+        this.processForecastData(res2);        
       })
+
+      return resp
     })
-    .finally(()=>{
-      this.spinner = false
+    .then(async (resp)=>{
+      this.setState((state) => ({
+                currentWeatherApiRes: state.currentWeatherApiRes,
+                lat: state.lat,
+                long: state.long,
+                forecastWeatherApiRes : state.forecastWeatherApiRes,
+                chartsData : state.chartsData
+              }));
+    })
+    .finally(async ()=>{
+
+      this.setState((state) => ({
+        currentWeatherApiRes: state.currentWeatherApiRes,
+        lat: state.currentWeatherApiRes,
+        long: state.currentWeatherApiRes,
+        forecastWeatherApiRes : state.currentWeatherApiRes,
+        chartsData : state.chartsData,
+      }));
     })
 
   }
@@ -120,7 +137,7 @@ class Main extends Component{
       currentWeatherApiRes: state.currentWeatherApiRes,
       lat: state.lat,
       long: state.long,
-      forecastWeatherApiRes : state,
+      forecastWeatherApiRes : state.forecastWeatherApiRes,
       chartsData : list
     }));
 
@@ -141,7 +158,6 @@ class Main extends Component{
 
       callWeatherAPIforWeatherForecast(latitude,longitude)
       .then(res2 =>{
-        console.log(res2)
         this.setState((state) => ({
                 currentWeatherApiRes: state.currentWeatherApiRes,
                 lat: latitude,
@@ -164,7 +180,7 @@ class Main extends Component{
 
   render(){
     return ( 
-      this.spinner ? 
+      this.state.currentWeatherApiRes === null || this.state.forecastWeatherApiRes === null ? 
       <Spinner/>
               : 
       <Layout>
@@ -175,11 +191,14 @@ class Main extends Component{
           <Space direction="vertical" size="middle" style={{ display: 'flex' }}>
             <Card hoverable size="small" title="Current Selected Location" style={{ minWidth: '300px'  }}>
                 <Row style={{alignContent:'center' , justifyContent: 'space-between' , alignItems:'center'}}>
-                  <Col span ={12}  style={{minWidth:'75px' ,textAlign:'center'}}> 
-                    Latitude : {this.state.lat}
+                  <Col span ={8}  style={{minWidth:'75px' ,textAlign:'center'}}> 
+                    Location : {this.state.forecastWeatherApiRes.data.city.name} , {this.state.forecastWeatherApiRes.data.city.country}
                   </Col>
-                  <Col span ={12} style={{minWidth:'75px' ,textAlign:'center'}}> 
-                    longitude : {this.state.long} 
+                  <Col span ={8}  style={{minWidth:'75px' ,textAlign:'center'}}> 
+                    Latitude : {this.state.lat.toString().substring(0, 10)}
+                  </Col>
+                  <Col span ={8} style={{minWidth:'75px' ,textAlign:'center'}}> 
+                    longitude : {this.state.long.toString().substring(0, 10)} 
                   </Col>
                 </Row>
               </Card>
@@ -233,7 +252,7 @@ class Main extends Component{
                 </Col>
               </Row>
             </Card>
-            <Card hoverable size="small" title="Find Weather for another location" style={{ minWidth: '300px' }}>
+            <Card hoverable size="small" title="Click on the map below to select and find weather for a new location" style={{ minWidth: '300px' }}>
               <LeafletMap handleClickEventData={this.handleClickEventData} lat={this.state.lat} long={this.state.long}/>
             </Card>
   
